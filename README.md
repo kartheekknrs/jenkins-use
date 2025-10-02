@@ -1,18 +1,16 @@
 # DOCKER AS AN AGENT and also used to puch and pull ----- how to sue username , password variable type-1
 -----------------------------------------------------------------------------------------------------
 
-pipeline {
+ pipeline {
     agent {
         docker {
             image 'docker:24.0-cli'    // docker CLI image
             args '-v /var/run/docker.sock:/var/run/docker.sock'  // bind host daemon
         }
     }
-
     environment {
         DOCKER_CREDS = credentials('dockerhub-creds')
     }
-
     stages {
         stage('Build & Push') {
             steps {
@@ -25,7 +23,7 @@ pipeline {
             }
         }
     }
-}
+} 
 
 
 # how to use variables in pipeline
@@ -33,12 +31,10 @@ pipeline {
 
 pipeline {
     agent any
-
     environment {
         APP_ENV = "production"          // simple string
         API_URL = "https://api.example.com"
     }
-
     stages {
         stage('Show Environment') {
             steps {
@@ -53,11 +49,9 @@ pipeline {
 -------------------------------------------
 pipeline {
     agent any
-
     environment {
         MY_TOKEN = credentials('my-secret-token')
     }
-
     stages {
         stage('Use Token') {
             steps {
@@ -73,7 +67,6 @@ pipeline {
 
 pipeline {
     agent any
-
     stages {
         stage('Git Checkout') {
             steps {
