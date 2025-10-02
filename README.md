@@ -1,6 +1,6 @@
-# DOCKER AS AN AGENT and also used to puch and pull ----- how to sue username , password variable type-1
------------------------------------------------------------------------------------------------------
 
+## how to use username , password variable type-1 which are stored in credentials in jenkins 
+```
  pipeline {
     agent {
         docker {
@@ -24,47 +24,10 @@
         }
     }
 } 
-
-
-# how to use variables in pipeline
-----------------------------------
-
-pipeline {
-    agent any
-    environment {
-        APP_ENV = "production"          // simple string
-        API_URL = "https://api.example.com"
-    }
-    stages {
-        stage('Show Environment') {
-            steps {
-                echo "App environment is: ${env.APP_ENV}"
-                echo "API URL is: ${env.API_URL}"
-            }
-        }
-    }
-}
-
-# how to use jenkins cradentials as variable
--------------------------------------------
-pipeline {
-    agent any
-    environment {
-        MY_TOKEN = credentials('my-secret-token')
-    }
-    stages {
-        stage('Use Token') {
-            steps {
-                sh 'echo "Using token: $MY_TOKEN"'  // hidden in Jenkins logs
-            }
-        }
-    }
-} 
-
-
-# Using Username & Password Credentials type-2
+```
+## Using Username & Password Credentials type-2 (withcredentials types mentioned bellow)
 --------------------------------------
-
+```
 pipeline {
     agent any
     stages {
@@ -82,21 +45,159 @@ pipeline {
         }
     }
 }
+```
+
+
+TYPES OF WITHCREDENTIALS
+------------------------------
+| Type                | Wrapper in Pipeline      | Example Use Case                        |
+| ------------------- | ------------------------ | --------------------------------------- |
+| Secret text         | `string(...)`            | API tokens, SonarQube token             |
+| Username + password | `usernamePassword(...)`  | Git, DockerHub, basic auth              |
+| SSH private key     | `sshUserPrivateKey(...)` | SSH deploy, Git over SSH                |
+| Certificate         | `certificate(...)`       | HTTPS client auth, signing certificates |
 
 
 
-# for git using environment credentials
--------------------------------------
+### 1️⃣ Secret text
+
+Stores: Single string like API token, password, or key
+
+Pipeline example:
+```
 pipeline {
     agent any
-    environment {
-        GIT_TOKEN = credentials('github-token')
-    }
     stages {
-        stage('Clone') {
+        stage('Use Secret Text') {
             steps {
-                sh 'git clone https://$GIT_TOKEN@github.com/username/repo.git'
+                withCredentials([string(credentialsId: 'sonarqube-token', variable: 'TOKEN')]) {
+                    sh 'echo "Using token: $TOKEN"'
+                    // Example: SonarQube analysis
+                    sh 'mvn sonar:sonar -Dsonar.login=$TOKEN'
+                }
             }
         }
     }
 }
+```
+
+### 2️⃣ Username with password
+
+Stores: Username + password pair (e.g., Git, DockerHub)
+
+Pipeline example:
+```
+pipeline {
+    agent any
+    stages {
+        stage('Git Clone') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'git-creds', 
+                                                 usernameVariable: 'GIT_USER', 
+                                                 passwordVariable: 'GIT_PASS')]) {
+                    sh 'git clone https://$GIT_USER:$GIT_PASS@github.com/kartheek/project.git'
+                }
+            }
+        }
+    }
+}
+```
+### 3️⃣ SSH private key
+
+Stores: SSH key (optionally with passphrase) for accessing servers or Git
+
+Pipeline example:
+```
+pipeline {
+    agent any
+    stages {
+        stage('SSH Deployment') {
+            steps {
+                withCredentials([sshUserPrivateKey(credentialsId: 'ssh-key-id', 
+                                                   keyFileVariable: 'SSH_KEY',
+                                                   usernameVariable: 'SSH_USER')]) {
+                    sh '''
+                    echo "Deploying via SSH..."
+                    ssh -i $SSH_KEY $SSH_USER@server 'ls -la'
+                    '''
+                }
+            }
+        }
+    }
+}
+```
+keyFileVariable → temporary file path to private key
+
+usernameVariable → SSH username
+
+### 4️⃣ Certificate
+
+Stores: Certificate + password (for HTTPS or secure APIs)
+
+Pipeline example:
+```
+pipeline {
+    agent any
+    stages {
+        stage('Use Certificate') {
+            steps {
+                withCredentials([certificate(credentialsId: 'my-cert', 
+                                             keystoreVariable: 'CERT_FILE', 
+                                             passwordVariable: 'CERT_PASS')]) {
+                    sh '''
+                    echo "Using certificate at $CERT_FILE with password $CERT_PASS"
+                    keytool -list -keystore $CERT_FILE -storepass $CERT_PASS
+                    '''
+                }
+            }
+        }
+    }
+}
+```
+
+keystoreVariable → path to temporary certificate file
+
+passwordVariable → certificate password
+
+
+
+
+# how to create env variables in pipeline
+----------------------------------
+```
+pipeline {
+    agent any
+    environment {
+        APP_ENV = "production"          // simple string
+        API_URL = "https://api.example.com"
+    }
+    stages {
+        stage('Show Environment') {
+            steps {
+                echo "App environment is: ${env.APP_ENV}"
+                echo "API URL is: ${env.API_URL}"
+            }
+        }
+    }
+}
+```
+
+# how to use jenkins credentials as variable (direct way like single variable in credentials like token not like username , password)
+-------------------------------------------
+```
+pipeline {
+    agent any
+    environment {
+        MY_TOKEN = credentials('my-secret-token')
+    }
+    stages {
+        stage('Use Token') {
+            steps {
+                sh 'echo "Using token: $MY_TOKEN"'  // hidden in Jenkins logs
+            }
+        }
+    }
+} 
+```
+
+
