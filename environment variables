@@ -1,0 +1,109 @@
+DOCKER AS AN AGENT and also used to puch and pull ----- how to sue username , password variable type-1
+-----------------------------------------------------------------------------------------------------
+
+pipeline {
+    agent {
+        docker {
+            image 'docker:24.0-cli'    // docker CLI image
+            args '-v /var/run/docker.sock:/var/run/docker.sock'  // bind host daemon
+        }
+    }
+
+    environment {
+        DOCKER_CREDS = credentials('dockerhub-creds')
+    }
+
+    stages {
+        stage('Build & Push') {
+            steps {
+                sh '''
+                docker login -u $DOCKER_CREDS_USR -p $DOCKER_CREDS_PSW
+                docker build -t my-app:latest .
+                docker tag my-app:latest mydockerhubuser/my-app:latest
+                docker push mydockerhubuser/my-app:latest
+                '''
+            }
+        }
+    }
+}
+
+
+how to use variables in pipeline
+----------------------------------
+
+pipeline {
+    agent any
+
+    environment {
+        APP_ENV = "production"          // simple string
+        API_URL = "https://api.example.com"
+    }
+
+    stages {
+        stage('Show Environment') {
+            steps {
+                echo "App environment is: ${env.APP_ENV}"
+                echo "API URL is: ${env.API_URL}"
+            }
+        }
+    }
+}
+
+how to use jenkins cradentials as variable
+-------------------------------------------
+pipeline {
+    agent any
+
+    environment {
+        MY_TOKEN = credentials('my-secret-token')
+    }
+
+    stages {
+        stage('Use Token') {
+            steps {
+                sh 'echo "Using token: $MY_TOKEN"'  // hidden in Jenkins logs
+            }
+        }
+    }
+} 
+
+
+Using Username & Password Credentials type-2
+--------------------------------------
+
+pipeline {
+    agent any
+
+    stages {
+        stage('Git Checkout') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'git-creds', 
+                                                 usernameVariable: 'GIT_USER', 
+                                                 passwordVariable: 'GIT_PASS')]) {
+                    sh '''
+                        echo "Cloning repository..."
+                        git clone https://$GIT_USER:$GIT_PASS@github.com/username/repo.git
+                    '''
+                }
+            }
+        }
+    }
+}
+
+
+
+for git using environment credentials
+-------------------------------------
+pipeline {
+    agent any
+    environment {
+        GIT_TOKEN = credentials('github-token')
+    }
+    stages {
+        stage('Clone') {
+            steps {
+                sh 'git clone https://$GIT_TOKEN@github.com/username/repo.git'
+            }
+        }
+    }
+}
