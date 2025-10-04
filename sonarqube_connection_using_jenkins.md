@@ -81,7 +81,7 @@ pipeline {
 
 ## FOR JAVA & MAVEN Projects
 
-In this code he used direct variables like url and login cradentials . of we follow above steps we only use **mvn sonar:sonar**
+In this code he used direct variables like url and login cradentials . if we follow above steps we only use **mvn sonar:sonar**
 ```
     stage('Static Code Analysis') {
       environment {
