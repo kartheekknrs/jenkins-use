@@ -6,6 +6,8 @@
         docker {
             image 'docker:24.0-cli'    // docker CLI image
             args '-v /var/run/docker.sock:/var/run/docker.sock'  // bind host daemon
+// it may does not work we need to add jenkins user to the docker group which helps docker to communicate with docker demonsets
+// we use (sudo usermod -aG docker jenkins)   to give that access even in using agent any we use this.
         }
     }
     environment {
